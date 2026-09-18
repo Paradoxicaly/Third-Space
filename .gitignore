@@ -1,0 +1,23 @@
+# Xcode user-specific files
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Xcode build output
+DerivedData/
+build/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# CocoaPods
+Pods/
+
+# macOS metadata
+.DS_Store
+
+# Local secrets and environment files
+.env
+*.secret
