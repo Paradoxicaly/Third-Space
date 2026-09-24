@@ -21,3 +21,7 @@ Pods/
 # Local secrets and environment files
 .env
 *.secret
+
+# Local team workspace files and exported submission artifacts
+/CSIGroup/
+/CSI Proposal - Section 4 Fixed.pdf
