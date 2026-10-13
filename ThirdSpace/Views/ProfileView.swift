@@ -1,43 +1,45 @@
 import SwiftUI
 
 struct ProfileView: View {
+    @EnvironmentObject private var environment: AppEnvironment
+    @AppStorage("appearance") private var appearance = "system"
+    @State private var selectedDraft: Submission?
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    HStack(spacing: 14) {
-                        ZStack {
-                            Circle().fill(Color.thirdCoral.opacity(0.15))
-                            Image(systemName: "person.fill")
-                                .font(.title2)
-                                .foregroundStyle(Color.thirdCoral)
-                        }
-                        .frame(width: 58, height: 58)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Welcome to Third Space")
-                                .font(.headline)
-                            Text("Your local community guide")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                Section("On this device") {
+                    Label("Browse without signing in", systemImage: "person.crop.circle")
+                    Text("Saved places and drafts stay on this device. Account sync and remote contributions are not connected in this prototype.")
+                        .foregroundStyle(FieldGuide.Palette.secondary)
+                }
+                Section("Product status") {
+                    Label("Public submissions not available", systemImage: "clock")
+                    Label("No verified regions yet", systemImage: "map")
+                }
+                Section("Local drafts") {
+                    if environment.localDrafts.isEmpty { Text("No local drafts yet") }
+                    ForEach(environment.localDrafts) { draft in
+                        Button { selectedDraft = draft } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Label("Local draft · \(draft.kind.displayName)", systemImage: "pencil")
+                                Text(draft.body).foregroundStyle(FieldGuide.Palette.primary)
+                            }.frame(minHeight: 44)
                         }
                     }
-                    .padding(.vertical, 5)
                 }
-
-                Section("Your activity") {
-                    Label("Saved places", systemImage: "bookmark.fill")
-                    Label("Your reviews", systemImage: "star.bubble.fill")
-                    Label("Suggested places", systemImage: "plus.circle.fill")
-                }
-
-                Section("About") {
-                    Label("How Third Space works", systemImage: "lightbulb.fill")
-                    Label("Community guidelines", systemImage: "heart.text.square.fill")
+                Section("Appearance") {
+                    Picker("Color appearance", selection: $appearance) {
+                        Text("System").tag("system")
+                        Text("Light").tag("light")
+                        Text("Dark").tag("dark")
+                    }
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color.thirdCream)
+            .background(FieldGuide.Palette.canvas)
             .navigationTitle("Profile")
+            .task { await environment.restoreLocalState() }
+            .sheet(item: $selectedDraft) { ContributeMenu(initialDraft: $0) }
         }
     }
 }

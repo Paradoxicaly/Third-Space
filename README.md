@@ -1,87 +1,38 @@
 # Third Spaces
 
-Third Spaces is a Capstone project exploring how people can discover welcoming places to study, work, meet, move, create, or relax outside home and school. Instead of only listing businesses, it organizes places by the feeling or need they support.
+Third Spaces is a worldwide-capable native iOS community field guide for finding welcoming places beyond home, work, or school. Carson/South Bay is a proposed first **seed collection**, not a geographic limit. The eventual primary Explore experience is map-first; the current list-first slice provides the accessible, permission-free foundation.
 
-The current pilot focuses on **Carson, California**. It is an early visual prototype—not yet a production directory—and its example listings and images must be verified before public release.
+## Current implementation boundary
 
-## Problem
+`ThirdSpace/` is a local native prototype under active development. Its development fixtures are **synthetic**, never verified public places. There is no production catalog, backend, account, moderation, live location, geographic search or provider-derived durable coordinate store. No demo row may be shipped as a verified listing. An empty world/region is a truthful result.
 
-Many people, especially students, struggle to find affordable, welcoming places to spend time beyond home and school. Existing map products make it difficult to search for qualities such as quietness, study space, outdoor seating, accessibility, or a sense of community. Third Spaces is designed to make those practical and social details easier to find.
+`web/` remains a separate Next.js visual pilot with local example content and motion experiments; it is not the production native design or a data source. Its changes and deployment are independent of this iOS work.
 
-## Current prototypes
+## Run and verify iOS
 
-This repository contains two related prototypes:
+Open `ThirdSpace.xcodeproj` in Xcode 26.6 or compatible and run the shared `ThirdSpace` scheme on an installed iOS 18+ simulator. Debug UI fixtures require `--ui-testing`; ordinary launches do not silently fall back to samples. For a signing-free build:
 
-- **`web/`** — the active Next.js visual pilot, called “Living City.” It includes intent-based discovery, Carson-area prototype cards, interactive motion, accessibility-aware reduced-motion behavior, and automated tests.
-- **`ThirdSpace/`** — an earlier SwiftUI iOS concept with Explore, Map, Saved, and Profile tabs plus local sample place data.
-
-The web pilot currently uses local prototype content only. Planned future work includes verified local place data, map search, community reviews, moderated submissions, authentication, and a secure backend.
-
-## Run the web prototype
-
-### Requirements
-
-- Node.js 20 or newer
-- npm
-
-### Setup
-
-```bash
-git clone https://github.com/Paradoxicaly/Third-Space.git
-cd Third-Space/web
-npm install
+```sh
+xcodebuild -project ThirdSpace.xcodeproj -scheme ThirdSpace -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath /tmp/third-spaces-ios-derived CODE_SIGNING_ALLOWED=NO build
 ```
 
-### Start the development server
+Set `IOS_SIMULATOR_ID` to an installed simulator UDID (`xcrun simctl list devices available`) and run the native tests:
 
-```bash
-npm run dev
+```sh
+xcodebuild -project ThirdSpace.xcodeproj -scheme ThirdSpace \
+  -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_ID" \
+  -derivedDataPath /tmp/third-spaces-ios-derived CODE_SIGNING_ALLOWED=NO test
+python3 scripts/verify-design-contrast.py
 ```
 
-Open <http://localhost:3000> in a browser.
+See `DEVELOPMENT.md`, `ARCHITECTURE.md`, `DESIGN.md`, and `docs/decisions/` for boundaries and open gates. No release/archive claim follows from an unsigned simulator build.
 
-### Quality checks
+## Web visual pilot (separate)
 
-```bash
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
+Requires Node.js 20+ and npm. In `web/`, run `npm install`, `npm run dev`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`. Browser tests: `npm run test:e2e`. See `web/THIRD_PARTY_NOTICES.md` and `web/public/places/README.md` for notices and prototype imagery. Nothing in the web pilot verifies actual places.
 
-End-to-end browser tests are available with:
+## Release gates
 
-```bash
-npm run test:e2e
-```
-
-## Run the iOS concept
-
-1. Open `ThirdSpace.xcodeproj` in Xcode.
-2. Select an iPhone simulator.
-3. Press **Run**.
-
-The iOS prototype uses in-app mock data, so no account, API key, or network connection is required.
-
-## Technology
-
-- Next.js, React, and TypeScript
-- GSAP, Lenis, Vanta, and selected React Bits components for the web prototype’s motion design
-- Swift and SwiftUI for the iOS concept
-- Vitest, Testing Library, and Playwright for web verification
-
-See [`web/THIRD_PARTY_NOTICES.md`](web/THIRD_PARTY_NOTICES.md) for component and library notices. Prototype imagery is documented in [`web/public/places/README.md`](web/public/places/README.md).
-
-## Project status and next steps
-
-The project is in an early design-and-validation phase. Before launch, it needs:
-
-- verified and attributed Carson-area place information and photography;
-- a searchable map and filters;
-- accounts, saves, reviews, and moderation workflows;
-- privacy and accessibility testing with users;
-- a production backend and deployment plan.
-
-## Git workflow
-
-Development happens through feature branches and Pull Requests. Before starting work, pull the latest `main`; commit small, focused changes; push at the end of a work session; and open a Pull Request for a complete feature before merging it into `main`.
+Provider coordinate/pin-placement rights, signing/domain ownership, backend region/data transfers, moderation staffing and languages, age policy, budget, regional distribution, content/photo rights, safety and privacy operations all remain open. No accounts, paid resources, publication or production place import are authorized by the local prototype. See the decision records for owners and blocked dependencies.

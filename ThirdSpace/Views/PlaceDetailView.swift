@@ -2,117 +2,60 @@ import SwiftUI
 
 struct PlaceDetailView: View {
     let place: Place
-    @EnvironmentObject private var store: PlaceStore
+    @EnvironmentObject private var environment: AppEnvironment
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                ZStack(alignment: .topTrailing) {
-                    RoundedRectangle(cornerRadius: 28)
-                        .fill(Color.thirdTeal.opacity(0.15))
-                        .frame(height: 230)
-                    Image(systemName: place.imageName)
-                        .font(.system(size: 72))
-                        .foregroundStyle(Color.thirdTeal)
-                    Button {
-                        store.toggleSaved(place)
-                    } label: {
-                        Image(systemName: store.isSaved(place) ? "bookmark.fill" : "bookmark")
-                            .font(.title3)
-                            .foregroundStyle(Color.thirdCoral)
-                            .padding(12)
-                            .background(.white, in: Circle())
+            VStack(alignment: .leading, spacing: FieldGuide.Spacing.lg) {
+                Text(place.name).font(.title.weight(.semibold))
+                if environment.isSynthetic {
+                    Label("SYNTHETIC — NOT A VERIFIED PLACE", systemImage: "flask")
+                        .foregroundStyle(FieldGuide.Palette.warning)
+                }
+                Text("Original language: \(place.originalLanguage) · \(place.regionID)")
+                    .font(.subheadline).foregroundStyle(FieldGuide.Palette.secondary)
+                Label("Hours unknown — check before visiting", systemImage: "clock")
+                Text("Practical evidence").font(.title2.weight(.semibold))
+                ForEach([FactKey.cost, .noise, .wifi, .outlets, .stepFreeEntrance, .accessibleToilet], id: \.self) { key in
+                    VStack(alignment: .leading, spacing: FieldGuide.Spacing.xs) {
+                        if let fact = place.facts.first(where: { $0.key == key }) {
+                            Text("\(key.label): \(fact.value.displayName)")
+                            Text("\(fact.source.attribution) · observed \(fact.source.observedAt.formatted(date: .abbreviated, time: .omitted))")
+                                .font(.footnote).foregroundStyle(FieldGuide.Palette.secondary)
+                        } else { Text("\(key.label): unknown — no source supplied") }
                     }
-                    .padding(16)
                 }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(place.name)
-                        .font(.largeTitle.bold())
-                        .foregroundStyle(Color.thirdInk)
-                    Text(place.vibe)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.thirdTeal)
-                    RatingView(rating: place.rating, reviewCount: place.reviewCount)
-                    Text(place.description)
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("What you'll find")
-                        .font(.title3.bold())
-                    FlowLayout(spacing: 8) {
-                        ForEach(place.amenities, id: \.self) { amenity in
-                            AmenityPill(text: amenity)
+                Text("Photos").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
+                if place.media.isEmpty {
+                    Label("No approved photos yet", systemImage: "photo")
+                        .foregroundStyle(FieldGuide.Palette.secondary)
+                } else {
+                    ForEach(place.media) { asset in
+                        VStack(alignment: .leading, spacing: FieldGuide.Spacing.xs) {
+                            Color.clear
+                                .aspectRatio(4 / 3, contentMode: .fit)
+                                .overlay { PlaceImage(asset: asset) }
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            // Credit sits on the opaque page, never over the image.
+                            Text(asset.creatorCredit)
+                                .font(.footnote).foregroundStyle(FieldGuide.Palette.secondary)
                         }
                     }
                 }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Label(place.address, systemImage: "mappin.and.ellipse")
-                    Label(place.isOpen ? "Open today until 7:00 PM" : "Closed now • opens tomorrow at 8:00 AM", systemImage: "clock")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
                 Button {
-                    // Directions will connect to Apple Maps in a later milestone.
+                    Task { await environment.toggleSaved(place) }
                 } label: {
-                    Label("Get directions", systemImage: "arrow.triangle.turn.up.right.diamond.fill")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .fontWeight(.bold)
-                        .foregroundStyle(.white)
-                        .background(Color.thirdCoral, in: RoundedRectangle(cornerRadius: 16))
+                    Label(environment.isSaved(place) ? "Remove local save" : "Save on this device", systemImage: "bookmark")
                 }
+                .buttonStyle(FieldGuideActionStyle())
+                Text("M2 detail preview. Community, directions and live contributions are not connected. No rating, opening-time or accessibility verification is implied.")
+                    .foregroundStyle(FieldGuide.Palette.secondary)
             }
-            .padding(20)
+            .padding(FieldGuide.Spacing.base)
+            .frame(maxWidth: 720, alignment: .leading).frame(maxWidth: .infinity)
         }
-        .background(Color.thirdCream.ignoresSafeArea())
+        .foregroundStyle(FieldGuide.Palette.primary)
+        .background(FieldGuide.Palette.canvas.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-private struct FlowLayout: Layout {
-    let spacing: CGFloat
-
-    init(spacing: CGFloat) {
-        self.spacing = spacing
-    }
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let width = proposal.width ?? 0
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var rowHeight: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > width, x > 0 {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-        }
-        return CGSize(width: width, height: y + rowHeight)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var point = bounds.origin
-        var rowHeight: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if point.x + size.width > bounds.maxX, point.x > bounds.minX {
-                point.x = bounds.minX
-                point.y += rowHeight + spacing
-                rowHeight = 0
-            }
-            subview.place(at: point, proposal: ProposedViewSize(size))
-            point.x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-        }
     }
 }
