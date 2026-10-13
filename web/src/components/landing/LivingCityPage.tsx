@@ -39,6 +39,9 @@ export function LivingCityPage() {
         return;
       }
 
+      const page = root.current;
+      if (!page) return;
+
       gsap.registerPlugin(ScrollTrigger);
       const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
       intro
@@ -67,7 +70,7 @@ export function LivingCityPage() {
         scaleY: 1,
         ease: "none",
         scrollTrigger: {
-          trigger: ".living-city",
+          trigger: page,
           start: "top top",
           end: "bottom bottom",
           scrub: 0.45,
