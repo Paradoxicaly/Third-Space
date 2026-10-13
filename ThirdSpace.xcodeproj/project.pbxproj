@@ -7,10 +7,14 @@
 
 /* Begin PBXFileReference section */
 		A10000000000000000000001 /* ThirdSpace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ThirdSpace.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000021 /* ThirdSpaceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThirdSpaceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000022 /* ThirdSpaceUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ThirdSpaceUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A10000000000000000000002 /* ThirdSpace */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (); path = ThirdSpace; sourceTree = "<group>"; };
+		A10000000000000000000023 /* ThirdSpaceTests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (); path = ThirdSpaceTests; sourceTree = "<group>"; };
+		A10000000000000000000024 /* ThirdSpaceUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (); path = ThirdSpaceUITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXGroup section */
@@ -18,6 +22,8 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000002 /* ThirdSpace */,
+				A10000000000000000000023 /* ThirdSpaceTests */,
+				A10000000000000000000024 /* ThirdSpaceUITests */,
 				A10000000000000000000004 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -25,6 +31,8 @@
 		A10000000000000000000004 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				A10000000000000000000021 /* ThirdSpaceTests.xctest */,
+				A10000000000000000000022 /* ThirdSpaceUITests.xctest */,
 				A10000000000000000000001 /* ThirdSpace.app */,
 			);
 			name = Products;
@@ -52,8 +60,16 @@
 			productReference = A10000000000000000000001 /* ThirdSpace.app */;
 			productType = "com.apple.product-type.application";
 		};
+		A10000000000000000000025 /* ThirdSpaceTests */ = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000031; buildPhases = (A10000000000000000000027, A10000000000000000000028, A10000000000000000000029); buildRules = (); dependencies = (A10000000000000000000035); fileSystemSynchronizedGroups = (A10000000000000000000023); name = ThirdSpaceTests; productName = ThirdSpaceTests; productReference = A10000000000000000000021; productType = "com.apple.product-type.bundle.unit-test"; };
+		A10000000000000000000026 /* ThirdSpaceUITests */ = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000032; buildPhases = (A1000000000000000000002A, A1000000000000000000002B, A1000000000000000000002C); buildRules = (); dependencies = (A10000000000000000000035); fileSystemSynchronizedGroups = (A10000000000000000000024); name = ThirdSpaceUITests; productName = ThirdSpaceUITests; productReference = A10000000000000000000022; productType = "com.apple.product-type.bundle.ui-testing"; };
 /* End PBXNativeTarget section */
 
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000036 = {isa = PBXContainerItemProxy; containerPortal = A10000000000000000000010; proxyType = 1; remoteGlobalIDString = A10000000000000000000005; remoteInfo = ThirdSpace; };
+/* End PBXContainerItemProxy section */
+/* Begin PBXTargetDependency section */
+		A10000000000000000000035 = {isa = PBXTargetDependency; target = A10000000000000000000005; targetProxy = A10000000000000000000036; };
+/* End PBXTargetDependency section */
 /* Begin PBXProject section */
 		A10000000000000000000010 /* Project object */ = {
 			isa = PBXProject;
@@ -61,7 +77,7 @@
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
-				TargetAttributes = { A10000000000000000000005 = { CreatedOnToolsVersion = 26.0; }; };
+				TargetAttributes = { A10000000000000000000005 = { CreatedOnToolsVersion = 26.0; }; A10000000000000000000025 = { CreatedOnToolsVersion = 26.0; TestTargetID = A10000000000000000000005; }; A10000000000000000000026 = { CreatedOnToolsVersion = 26.0; TestTargetID = A10000000000000000000005; }; };
 			};
 			buildConfigurationList = A10000000000000000000011 /* Build configuration list for PBXProject "ThirdSpace" */;
 			compatibilityVersion = "Xcode 16.0";
@@ -74,20 +90,26 @@
 			productRefGroup = A10000000000000000000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (A10000000000000000000005 /* ThirdSpace */,);
+			targets = (A10000000000000000000005 /* ThirdSpace */, A10000000000000000000025 /* ThirdSpaceTests */, A10000000000000000000026 /* ThirdSpaceUITests */,);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		A10000000000000000000009 /* Resources */ = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000029 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A1000000000000000000002C = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A10000000000000000000007 /* Sources */ = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000027 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A1000000000000000000002A = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A10000000000000000000008 /* Frameworks */ = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000028 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A1000000000000000000002B = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
@@ -99,6 +121,8 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				SWIFT_VERSION = 5.0;
@@ -122,13 +146,17 @@
 		A10000000000000000000014 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Third Space";
+				INFOPLIST_KEY_CFBundleDisplayName = "Third Spaces";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.thirdspace.app;
@@ -138,19 +166,22 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
 		A10000000000000000000015 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Third Space";
+				INFOPLIST_KEY_CFBundleDisplayName = "Third Spaces";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.thirdspace.app;
@@ -160,15 +191,21 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_STRICT_CONCURRENCY = complete;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
+		A1000000000000000000002D = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 18.0; PRODUCT_BUNDLE_IDENTIFIER = com.thirdspace.app.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; BUNDLE_LOADER = "$(TEST_HOST)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ThirdSpace.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThirdSpace"; }; name = Debug; };
+		A1000000000000000000002E = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 18.0; PRODUCT_BUNDLE_IDENTIFIER = com.thirdspace.app.tests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; BUNDLE_LOADER = "$(TEST_HOST)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ThirdSpace.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ThirdSpace"; }; name = Release; };
+		A1000000000000000000002F = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 18.0; PRODUCT_BUNDLE_IDENTIFIER = com.thirdspace.app.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = ThirdSpace; }; name = Debug; };
+		A10000000000000000000030 = {isa = XCBuildConfiguration; buildSettings = { CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 18.0; PRODUCT_BUNDLE_IDENTIFIER = com.thirdspace.app.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = ThirdSpace; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
 		A10000000000000000000011 /* Build configuration list for PBXProject "ThirdSpace" */ = { isa = XCConfigurationList; buildConfigurations = (A10000000000000000000012 /* Debug */, A10000000000000000000013 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		A10000000000000000000006 /* Build configuration list for PBXNativeTarget "ThirdSpace" */ = { isa = XCConfigurationList; buildConfigurations = (A10000000000000000000014 /* Debug */, A10000000000000000000015 /* Release */); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000031 = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000002D, A1000000000000000000002E); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000032 = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000002F, A10000000000000000000030); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 	};
 	rootObject = A10000000000000000000010 /* Project object */;

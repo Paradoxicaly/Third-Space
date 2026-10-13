@@ -1,141 +1,143 @@
 import SwiftUI
 
 struct ExploreView: View {
-    @State private var searchText = ""
-    @State private var selectedCategory: PlaceCategory = .all
-
-    private var filteredPlaces: [Place] {
-        Place.examples.filter { place in
-            let categoryMatches = selectedCategory == .all || place.category == selectedCategory
-            let searchMatches = searchText.isEmpty || place.name.localizedCaseInsensitiveContains(searchText) || place.subtitle.localizedCaseInsensitiveContains(searchText)
-            return categoryMatches && searchMatches
-        }
-    }
-
+    @EnvironmentObject private var environment: AppEnvironment
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.thirdCream.ignoresSafeArea()
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text("Find your")
-                                .font(.title2.weight(.semibold))
-                            Text("third space.")
-                                .font(.largeTitle.bold())
-                                .foregroundStyle(Color.thirdCoral)
-                            Text("Welcoming places to focus, connect, and recharge.")
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.top, 8)
-
-                        HStack(spacing: 10) {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundStyle(.secondary)
-                            TextField("Search nearby spaces", text: $searchText)
-                            Image(systemName: "slider.horizontal.3")
-                                .foregroundStyle(Color.thirdTeal)
-                        }
-                        .padding(14)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: .black.opacity(0.05), radius: 12, y: 5)
-
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 10) {
-                                ForEach(PlaceCategory.allCases) { category in
-                                    Button {
-                                        selectedCategory = category
-                                    } label: {
-                                        Label(category.rawValue, systemImage: category.icon)
-                                            .font(.subheadline.weight(.semibold))
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 10)
-                                            .foregroundStyle(selectedCategory == category ? .white : Color.thirdInk)
-                                            .background(selectedCategory == category ? Color.thirdTeal : .white, in: Capsule())
-                                    }
-                                }
-                            }
-                        }
-
-                        HStack {
-                            Text("Near you")
-                                .font(.title2.bold())
-                            Spacer()
-                            Text("\(filteredPlaces.count) places")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        LazyVStack(spacing: 16) {
-                            ForEach(filteredPlaces) { place in
-                                NavigationLink(value: place) {
-                                    PlaceCard(place: place)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 108)
-                }
-            }
-            .navigationDestination(for: Place.self) { place in
-                PlaceDetailView(place: place)
-            }
-        }
+        ExploreContent(model: environment.explore)
     }
 }
 
-struct PlaceCard: View {
-    let place: Place
-    @EnvironmentObject private var store: PlaceStore
-
+private struct ExploreContent: View {
+    @ObservedObject var model: ExploreViewModel
+    @EnvironmentObject private var environment: AppEnvironment
+    @State private var showingFilters = false
+    @FocusState private var searching: Bool
+    @AccessibilityFocusState private var resultsFocused: Bool
+    @State private var confirmsQueryReset = false
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.thirdTeal.opacity(0.16))
-                Image(systemName: place.imageName)
-                    .font(.title)
-                    .foregroundStyle(Color.thirdTeal)
-            }
-            .frame(width: 78, height: 104)
-
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(place.name)
-                            .font(.headline)
-                            .foregroundStyle(Color.thirdInk)
-                        Text(place.subtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
+        NavigationStack {
+            ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: FieldGuide.Spacing.base) {
+                    if environment.isSynthetic {
+                        SyntheticBadge(text: "Synthetic demo · not verified places")
                     }
-                    Spacer()
-                    Button {
-                        store.toggleSaved(place)
-                    } label: {
-                        Image(systemName: store.isSaved(place) ? "bookmark.fill" : "bookmark")
-                            .foregroundStyle(Color.thirdCoral)
-                            .padding(5)
+                    Text("Find somewhere you can spend time—and know what to expect before you go.")
+                        .foregroundStyle(FieldGuide.Palette.secondary)
+                    HStack(spacing: FieldGuide.Spacing.xs) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(FieldGuide.Palette.secondary)
+                            .accessibilityHidden(true)
+                        TextField("Search owned places", text: $model.query.text,
+                                  prompt: Text("Search owned places").foregroundColor(FieldGuide.Palette.secondary))
+                            .focused($searching).submitLabel(.search)
+                            .onSubmit { searching = false }
                     }
+                    .padding(.horizontal, 12).frame(minHeight: 48)
+                    .background(FieldGuide.Palette.surface, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(FieldGuide.Palette.controlBorder, lineWidth: 1))
+                    FlowLayout {
+                        areaMenu
+                        Button { showingFilters = true } label: {
+                            FieldGuideChip(title: activeFilterCount == 0 ? "Filters" : "Filters · \(activeFilterCount)",
+                                           systemImage: "line.3.horizontal.decrease", isSelected: activeFilterCount > 0)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Explore filters")
+                        .accessibilityValue("\(activeFilterCount) active")
+                        Button {
+                            searching = false
+                            proxy.scrollTo("place-results", anchor: .top)
+                            resultsFocused = true
+                        } label: {
+                            FieldGuideChip(title: "List", systemImage: "list.bullet")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Show results as list")
+                        .accessibilityHint("Results are listed below. Map exploration comes in a later milestone.")
+                    }
+                    FlowLayout {
+                        ForEach(ExploreIntent.allCases, id: \.self) { intent in
+                            let selected = model.query.intents.contains(intent)
+                            Button {
+                                if selected { model.query.intents.remove(intent) } else { model.query.intents.insert(intent) }
+                            } label: {
+                                FieldGuideChip(title: intent.label, systemImage: intent.icon, isSelected: selected)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(intent.label)
+                            .accessibilityHint("Visit intent filter")
+                            .accessibilityAddTraits(selected ? .isSelected : [])
+                        }
+                    }
+                    if let problem = model.queryRestorationProblem {
+                        VStack(alignment: .leading, spacing: FieldGuide.Spacing.sm) {
+                            Label("Stored search needs attention", systemImage: "exclamationmark.triangle")
+                                .font(.headline).foregroundStyle(FieldGuide.Palette.warning)
+                            Text(problem).foregroundStyle(FieldGuide.Palette.secondary)
+                            Button("Retry stored search restoration") { model.retryStoredQueryRestoration() }.frame(minHeight: 44)
+                            Button("Reset stored search") { confirmsQueryReset = true }.frame(minHeight: 44)
+                        }
+                        .accessibilityIdentifier("query-restoration-problem")
+                    }
+                    VStack(alignment: .leading, spacing: FieldGuide.Spacing.xxs) {
+                        Text("Results").font(.title2.weight(.semibold))
+                            .accessibilityAddTraits(.isHeader)
+                            .accessibilityFocused($resultsFocused)
+                        Text("List foundation — map exploration is not connected yet.")
+                            .font(.footnote).foregroundStyle(FieldGuide.Palette.secondary)
+                    }
+                    .padding(.top, FieldGuide.Spacing.xs)
+                    .id("place-results")
+                    PlaceResultsList(model: model)
                 }
-                RatingView(rating: place.rating, reviewCount: place.reviewCount)
-                HStack {
-                    Text(place.isOpen ? "Open" : "Closed")
-                        .foregroundStyle(place.isOpen ? Color.thirdTeal : .secondary)
-                    Text("•")
-                    Text(place.distance)
-                }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .padding(FieldGuide.Spacing.base)
+                .frame(maxWidth: 720, alignment: .leading)
+                .frame(maxWidth: .infinity)
             }
+            .accessibilityIdentifier("explore-results-scroll")
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .background(FieldGuide.Palette.canvas)
+            .navigationTitle("Explore")
+            .sheet(isPresented: $showingFilters) { ExploreFiltersView(query: $model.query) }
+            .alert("Reset stored search?", isPresented: $confirmsQueryReset) {
+                Button("Cancel", role: .cancel) { }
+                Button("Reset search", role: .destructive) { model.resetStoredQuery() }
+            } message: {
+                Text("This deliberately replaces only the stored search with worldwide defaults. Existing saves and drafts are not changed.")
+            }
+            .task(id: model.query.queryID) { await model.refresh() }
         }
-        .padding(12)
-        .background(.white, in: RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.05), radius: 12, y: 5)
+    }
+
+    private var activeFilterCount: Int { model.query.intents.count + model.query.requiredFacts.count }
+
+    private var areaMenu: some View {
+        Menu {
+            Picker("Browse area", selection: $model.query.area) {
+                Text("Worldwide").tag(ExploreArea.world)
+                if environment.isSynthetic {
+                    ForEach(Region.syntheticUITestFixtures) { region in
+                        Text(region.names["en"] ?? region.id).tag(ExploreArea.region(region.id))
+                    }
+                    Text("SYNTHETIC Unmapped area").tag(ExploreArea.region("test-empty"))
+                }
+            }
+        } label: {
+            FieldGuideChip(title: areaName, systemImage: "globe", showsMenuIndicator: true)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Browse area")
+        .accessibilityValue(areaName)
+    }
+
+    private var areaName: String {
+        switch model.query.area {
+        case .world: "Worldwide"
+        case .region("test-empty"): "SYNTHETIC Unmapped area"
+        case .region(let id): Region.syntheticUITestFixtures.first { $0.id == id }?.names["en"] ?? id
+        case .bounds: "Selected map area"
+        }
     }
 }
