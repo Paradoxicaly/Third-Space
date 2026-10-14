@@ -17,8 +17,23 @@ struct ContributeMenu: View {
     var body: some View {
         NavigationStack {
             Form {
+                if let community = environment.community {
+                    Section {
+                        NavigationLink {
+                            SubmitPlaceView(community: community, startingCenter: environment.map.viewport.flatMap {
+                                GeoPoint(latitude: $0.centerLatitude, longitude: $0.centerLongitude)
+                            })
+                        } label: {
+                            Label("Submit a new place for review", systemImage: "mappin.and.ellipse")
+                        }
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("submit-place-link")
+                    } footer: {
+                        Text("A moderator approves new places before they appear publicly.")
+                    }
+                }
                 Section {
-                    Text("Local draft only — not submitted or public. No regional moderation service is connected.")
+                    Text("Local draft only — not submitted or public.")
                         .foregroundStyle(FieldGuide.Palette.warning)
                     Picker("Contribution type", selection: $kind) {
                         ForEach(kinds, id: \.self) { Text($0.displayName).tag($0) }

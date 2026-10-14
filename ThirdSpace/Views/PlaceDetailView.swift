@@ -12,8 +12,18 @@ struct PlaceDetailView: View {
                     Label("SYNTHETIC — NOT A VERIFIED PLACE", systemImage: "flask")
                         .foregroundStyle(FieldGuide.Palette.warning)
                 }
-                Text("Original language: \(place.originalLanguage) · \(place.regionID)")
-                    .font(.subheadline).foregroundStyle(FieldGuide.Palette.secondary)
+                if let provenance = place.provenance {
+                    if provenance.reviewStatus == .unreviewedCandidate {
+                        Label("Unreviewed candidate — not checked by Third Spaces", systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(FieldGuide.Palette.warning)
+                    }
+                    if let address = provenance.address {
+                        Label(address, systemImage: "mappin.and.ellipse")
+                    }
+                } else {
+                    Text("Original language: \(place.originalLanguage) · \(place.regionID)")
+                        .font(.subheadline).foregroundStyle(FieldGuide.Palette.secondary)
+                }
                 Label("Hours unknown — check before visiting", systemImage: "clock")
                 Text("Practical evidence").font(.title2.weight(.semibold))
                 ForEach([FactKey.cost, .noise, .wifi, .outlets, .stepFreeEntrance, .accessibleToilet], id: \.self) { key in
@@ -24,6 +34,12 @@ struct PlaceDetailView: View {
                                 .font(.footnote).foregroundStyle(FieldGuide.Palette.secondary)
                         } else { Text("\(key.label): unknown — no source supplied") }
                     }
+                }
+                if let provenance = place.provenance {
+                    sourceSection(provenance)
+                }
+                if let community = environment.community {
+                    PlaceCommunitySection(place: place, community: community)
                 }
                 Text("Photos").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
                 if place.media.isEmpty {
@@ -57,5 +73,22 @@ struct PlaceDetailView: View {
         .foregroundStyle(FieldGuide.Palette.primary)
         .background(FieldGuide.Palette.canvas.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// Record-level provenance: required for imported places and shown before any archive content.
+    private func sourceSection(_ provenance: PlaceProvenance) -> some View {
+        VStack(alignment: .leading, spacing: FieldGuide.Spacing.xs) {
+            Text("Source").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
+            Text("\(provenance.sourceTitle) — \(provenance.publisher)")
+            Text("Licence: \(provenance.license)")
+            Text("Record \(provenance.sourceRecordID) · retrieved \(provenance.retrieved)")
+            Text("Position: \(provenance.coordinateMethod)\(place.precision == .approximatePublic ? " · approximate" : "")")
+            Text(provenance.citation)
+            if let url = URL(string: provenance.sourceURL) {
+                Link("View source dataset", destination: url).frame(minHeight: 44)
+            }
+        }
+        .font(.footnote)
+        .foregroundStyle(FieldGuide.Palette.secondary)
     }
 }

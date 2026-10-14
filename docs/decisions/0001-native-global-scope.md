@@ -47,3 +47,9 @@ Review these at their milestones; record owner, date, evidence and actual approv
 - **Implemented locally with synthetic data only:** MKMapView rendering with Apple POIs excluded, world-scale aggregate cells, native clustering, photo markers and a preview card; no location prompt, no provider search, no persisted provider coordinates. Coordinate-rights (0002) and all other gates above remain **open**.
 - **Media:** `MediaAsset` now carries a source and a synthetic flag; public places expose only rights-cleared media approved for their own record. Fixture images are generated abstract patterns (`scripts/generate-synthetic-media.py`), labelled SYNTHETIC with alt text, never photographs of a place. Real uploads still require contributor rights evidence, EXIF/GPS stripping, human review and a provisioned backend; none exists.
 
+
+## 2026-10-13 product decision — community features and Supabase
+
+The product owner supplied nine acceptance criteria and chose the iOS app with a real Supabase backend now. This **supersedes** for MVP: "no ratings/points" (criterion 4 adds 1–5 star ratings with average and count; still no leaderboards or paid ranking) and "public submissions blocked" (criteria 2–3 add member submissions with a map pin, moderator approval and visible decisions). Implemented: accounts (email + password), submissions forced to `pending`, a moderator queue with no self-approval, ratings, reviews, likes, follows, reports to moderators, and like-based recommendations. Schema and RLS are in `supabase/migrations`; setup and the adversarial RLS check are in `supabase/README.md`.
+
+Still open and **not** satisfied by this change: legal determination on member-authored pin coordinates (0002), named moderators/languages and escalation, age policy, account deletion, blocking, rate limiting, email verification and region/cost choices for the owner's project (0003). The owner provisions the project; no service-role key is used by the app or scripts.

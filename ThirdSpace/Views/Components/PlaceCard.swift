@@ -86,11 +86,16 @@ struct PlaceCard: View {
         .accessibilityHint("Saves privately on this device")
     }
 
-    private var categoryLine: String { "\(place.category.rawValue.capitalized) · \(place.regionID)" }
+    private var categoryLine: String { "\(place.category.rawValue.capitalized) · \(place.provenance?.address ?? place.regionID)" }
 
     /// One dated source line for the card instead of repeating provenance on every fact.
     private var provenance: String {
-        guard !shownFacts.isEmpty else { return "No practical observations recorded yet" }
+        guard !shownFacts.isEmpty else {
+            if let provenance = place.provenance, provenance.reviewStatus == .unreviewedCandidate {
+                return "Unreviewed candidate · \(provenance.publisher) · no practical observations yet"
+            }
+            return "No practical observations recorded yet"
+        }
         let sources = shownFacts.map(\.source)
         let attribution = sources.allSatisfy { $0.kind == .syntheticFixture }
             ? "SYNTHETIC fixture (invented)"

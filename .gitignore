@@ -25,3 +25,10 @@ Pods/
 # Local team workspace files and exported submission artifacts
 /CSIGroup/
 /CSI Proposal - Section 4 Fixed.pdf
+
+# Supabase project config for local builds (anon key; still kept out of git)
+ThirdSpace/Resources/Supabase.plist
+
+# Python bytecode
+__pycache__/
+*.pyc

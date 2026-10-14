@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct ThirdSpaceApp: App {
-    @StateObject private var environment = AppEnvironment()
+    @StateObject private var environment = AppEnvironment(supabaseConfig: .bundled())
     @StateObject private var router = AppRouter()
     @AppStorage("appearance") private var appearance = "system"
 
@@ -13,7 +13,7 @@ struct ThirdSpaceApp: App {
                 .environmentObject(router)
                 .preferredColorScheme(appearance == "dark" ? .dark : appearance == "light" ? .light : nil)
                 .modifier(DevelopmentPreviewConfiguration(arguments: environment.launchArguments))
-                .task { await environment.restoreLocalState() }
+                .task { await environment.restoreLocalState(); await environment.community?.restore() }
         }
     }
 }

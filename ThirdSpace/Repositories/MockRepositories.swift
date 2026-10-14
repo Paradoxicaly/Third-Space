@@ -11,7 +11,11 @@ actor MockPlaceRepository: PlaceRepository {
     private enum Operation: Hashable { case search, detail, map }
     private var failedOperations: Set<Operation> = []
     private let watermark = "synthetic-revision-1"
-    init(launchArguments: [String] = ProcessInfo.processInfo.arguments, pageSize: Int = 30, slowDelayNanoseconds: UInt64 = 500_000_000) {
+    /// Synthetic community submissions approved by the on-device moderator join the public catalog.
+    private let approvedSubmissions: (@Sendable () async -> [Place])?
+    init(launchArguments: [String] = ProcessInfo.processInfo.arguments, pageSize: Int = 30, slowDelayNanoseconds: UInt64 = 500_000_000,
+         approvedSubmissions: (@Sendable () async -> [Place])? = nil) {
+        self.approvedSubmissions = approvedSubmissions
         #if DEBUG
         self.enabled = launchArguments.contains("--ui-testing")
         self.places = enabled && !launchArguments.contains("--empty") ? Place.syntheticUITestFixtures : []
@@ -36,12 +40,13 @@ actor MockPlaceRepository: PlaceRepository {
         if isOffline { throw RepositoryError.offline }
         if failOnce, failedOperations.insert(operation).inserted { throw RepositoryError.unavailable }
     }
+    private func allPlaces() async -> [Place] { places + (await approvedSubmissions?() ?? []) }
     func searchPlaces(_ query: ExploreQuery, cursor: PlaceCursor?, generation: UInt64) async throws -> PlacePage {
         try await prepare(.search)
         if let cursor, cursor.queryID != query.queryID || cursor.generation != generation || cursor.watermark != watermark {
             throw RepositoryError.refreshRequired
         }
-        let matching = places.filter(query.matches).sorted { $0.id.uuidString < $1.id.uuidString }
+        let matching = await allPlaces().filter(query.matches).sorted { $0.id.uuidString < $1.id.uuidString }
         let start = cursor?.offset ?? 0
         guard start >= 0, start <= matching.count else { throw RepositoryError.refreshRequired }
         let page = Array(matching.dropFirst(start).prefix(pageSize))
@@ -50,22 +55,22 @@ actor MockPlaceRepository: PlaceRepository {
     }
     func getPlace(_ id: UUID) async throws -> Place? {
         try await prepare(.detail)
-        return places.first { $0.id == id }
+        return await allPlaces().first { $0.id == id }
     }
     func mapSummary(_ query: ExploreQuery, zoomBucket: Int) async throws -> MapSummary {
         try await prepare(.map)
-        let matching = places.filter(query.matches)
+        let matching = await allPlaces().filter(query.matches)
         if zoomBucket < 3 {
-            return .aggregate(Self.gridCells(matching, zoomBucket: zoomBucket), queryID: query.queryID, watermark: watermark)
+            return .aggregate(Self.gridCells(matching.compactMap(\.location), zoomBucket: zoomBucket), queryID: query.queryID, watermark: watermark)
         }
         return .places(Array(matching.prefix(200)), truncated: matching.count > 200, queryID: query.queryID, watermark: watermark)
     }
     /// Fixed lat/long grid (45° at world scale, halving per bucket). Cells are aligned to -180/-90 so a
     /// place beside the antimeridian falls in exactly one cell; cells carry counts, never member points.
-    static func gridCells(_ places: [Place], zoomBucket: Int) -> [AggregateCell] {
+    static func gridCells(_ points: [GeoPoint], zoomBucket: Int) -> [AggregateCell] {
         let size = 45 / pow(2, Double(max(0, zoomBucket)))
         var counts: [[Int]: Int] = [:]
-        for point in places.compactMap(\.location) {
+        for point in points {
             let row = min(Int((point.latitude + 90) / size), Int(180 / size) - 1)
             let column = min(Int((point.longitude + 180) / size), Int(360 / size) - 1)
             counts[[row, column], default: 0] += 1

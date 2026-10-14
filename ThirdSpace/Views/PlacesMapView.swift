@@ -21,8 +21,9 @@ private struct MapScreen: View {
             GeometryReader { geometry in
                 VStack(spacing: 0) {
                     statusPanel
-                    MapKitView(content: map.content, selectedPlaceID: map.selectedPlaceID, initialViewport: map.viewport,
-                               isSynthetic: environment.isSynthetic,
+                    MapKitView(content: map.content, selectedPlaceID: map.selectedPlaceID,
+                               initialViewport: map.viewport ?? environment.initialMapViewport,
+                               recordNoun: environment.recordNoun,
                                onViewportChange: schedule,
                                onSelectPlace: { map.selectedPlaceID = $0 })
                         .accessibilityElement(children: .contain)
@@ -58,8 +59,8 @@ private struct MapScreen: View {
     // Status sits on an opaque panel, never directly over map tiles.
     private var statusPanel: some View {
         VStack(alignment: .leading, spacing: FieldGuide.Spacing.xs) {
-            if environment.isSynthetic {
-                SyntheticBadge(text: "Synthetic demo · not verified places")
+            if let notice = environment.catalogNotice {
+                SyntheticBadge(text: notice)
             }
             status
             if activeFilterCount > 0 {

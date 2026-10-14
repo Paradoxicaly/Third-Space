@@ -19,8 +19,8 @@ private struct ExploreContent: View {
             ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: FieldGuide.Spacing.base) {
-                    if environment.isSynthetic {
-                        SyntheticBadge(text: "Synthetic demo · not verified places")
+                    if let notice = environment.catalogNotice {
+                        SyntheticBadge(text: notice)
                     }
                     Text("Find somewhere you can spend time—and know what to expect before you go.")
                         .foregroundStyle(FieldGuide.Palette.secondary)
@@ -80,6 +80,9 @@ private struct ExploreContent: View {
                         }
                         .accessibilityIdentifier("query-restoration-problem")
                     }
+                    if let community = environment.community {
+                        RecommendedSection(community: community, repository: environment.repository)
+                    }
                     VStack(alignment: .leading, spacing: FieldGuide.Spacing.xxs) {
                         Text("Results").font(.title2.weight(.semibold))
                             .accessibilityAddTraits(.isHeader)
@@ -117,10 +120,10 @@ private struct ExploreContent: View {
         Menu {
             Picker("Browse area", selection: $model.query.area) {
                 Text("Worldwide").tag(ExploreArea.world)
+                ForEach(environment.regions) { region in
+                    Text(region.names["en"] ?? region.id).tag(ExploreArea.region(region.id))
+                }
                 if environment.isSynthetic {
-                    ForEach(Region.syntheticUITestFixtures) { region in
-                        Text(region.names["en"] ?? region.id).tag(ExploreArea.region(region.id))
-                    }
                     Text("SYNTHETIC Unmapped area").tag(ExploreArea.region("test-empty"))
                 }
             }
@@ -136,8 +139,40 @@ private struct ExploreContent: View {
         switch model.query.area {
         case .world: "Worldwide"
         case .region("test-empty"): "SYNTHETIC Unmapped area"
-        case .region(let id): Region.syntheticUITestFixtures.first { $0.id == id }?.names["en"] ?? id
+        case .region(let id): environment.regions.first { $0.id == id }?.names["en"] ?? id
         case .bounds: "Selected map area"
         }
+    }
+}
+
+/// Places ranked by the member's likes (same-category affinity). Hidden until there is something to show.
+private struct RecommendedSection: View {
+    @ObservedObject var community: CommunityStore
+    let repository: any PlaceRepository
+    @State private var places: [Place] = []
+
+    var body: some View {
+        // A zero-height anchor keeps the view alive so the task runs before there is anything to show.
+        VStack(spacing: 0) {
+            Color.clear.frame(height: 0)
+            if !places.isEmpty {
+                VStack(alignment: .leading, spacing: FieldGuide.Spacing.xs) {
+                    Text("Recommended for you").font(.title2.weight(.semibold)).accessibilityAddTraits(.isHeader)
+                    Text("Based on places you've liked.").font(.footnote).foregroundStyle(FieldGuide.Palette.secondary)
+                    ForEach(Array(places.enumerated()), id: \.element.id) { index, place in
+                        NavigationLink { PlaceDetailView(place: place) } label: {
+                            Label(place.name, systemImage: place.category.icon)
+                                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityIdentifier("recommended-\(index)")
+                    }
+                }
+                .padding(FieldGuide.Spacing.base)
+                .background(FieldGuide.Palette.surface, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(FieldGuide.Palette.divider, lineWidth: 1))
+            }
+        }
+        .task(id: community.likedIDs) { places = await community.recommendations(from: repository) }
     }
 }
