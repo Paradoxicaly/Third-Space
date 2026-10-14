@@ -137,7 +137,7 @@ Thumbnails/tags 8 pt, cards/controls 12, editorial image panels 16; system contr
 
 ## Do's and Don'ts
 
-Do show approved-only counts, provenance, last checked date, honest no-coverage/offline/filter-empty states and a list fallback. Do distinguish location precision and consent. Don't clone reference branding/grid/pins or rely on provider terms as a catalog license. Don't put small brand-green text on cream, white labels on raw brand fills, words directly over map tiles or opacity-reduced functional text. Don't equate approval with verification/safety, use star scores/leaderboards in MVP, make a drag the only action or animate a user-driven camera pan.
+Do show approved-only counts, provenance, last checked date, honest no-coverage/offline/filter-empty states and a list fallback. Do distinguish location precision and consent. Don't clone reference branding/grid/pins or rely on provider terms as a catalog license. Don't put small brand-green text on cream, white labels on raw brand fills, words directly over map tiles or opacity-reduced functional text. Don't equate approval with verification/safety, use leaderboards (1–5 star ratings with count are allowed by the 2026-10-13 product decision; always show the count), make a drag the only action or animate a user-driven camera pan.
 
 ## Photography & Rights
 

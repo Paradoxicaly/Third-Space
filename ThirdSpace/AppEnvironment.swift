@@ -2,12 +2,20 @@ import Foundation
 import SwiftUI
 
 @MainActor final class AppEnvironment: ObservableObject {
+    /// What the catalog contains. Release builds are always fail-closed until a reviewed backend exists.
+    enum CatalogMode: Equatable { case failClosed, synthetic, candidates, live }
+
+    let catalogMode: CatalogMode
     let isSynthetic: Bool
+    /// Area choices for Explore; empty when there is no catalog.
+    let regions: [Region]
     let launchArguments: [String]
     let repository: any PlaceRepository
     let cache: OwnedContentCache
     let drafts: DraftStore
     let explore: ExploreViewModel
+    /// Accounts, submissions, moderation and engagement; nil when no community backend is configured.
+    let community: CommunityStore?
     let map: MapViewModel
     private let saved: any SavedRepository
     private var restorationGeneration: UInt64 = 0
@@ -17,22 +25,48 @@ import SwiftUI
     @Published var persistenceError: String?
     @Published var savedAsOf: Date?
 
-    init(arguments: [String] = ProcessInfo.processInfo.arguments, storageDirectory: URL? = nil, repository: (any PlaceRepository)? = nil) {
+    /// `supabaseConfig` is passed only by the app entry point, so tests never reach a live project by accident.
+    init(arguments: [String] = ProcessInfo.processInfo.arguments, storageDirectory: URL? = nil, repository: (any PlaceRepository)? = nil,
+         supabaseConfig: SupabaseConfig? = nil) {
         #if DEBUG
-        isSynthetic = arguments.contains("--ui-testing")
-        launchArguments = isSynthetic ? arguments : []
+        catalogMode = arguments.contains("--ui-testing") ? .synthetic : arguments.contains("--candidates") ? .candidates : supabaseConfig != nil ? .live : .failClosed
         #else
-        isSynthetic = false
-        launchArguments = []
+        catalogMode = supabaseConfig != nil ? .live : .failClosed
         #endif
+        isSynthetic = catalogMode == .synthetic
+        launchArguments = catalogMode == .synthetic || catalogMode == .candidates ? arguments : []
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let folder = storageDirectory ?? support.appendingPathComponent("ThirdSpaces/\(isSynthetic ? "SyntheticUITests" : "Local")", isDirectory: true)
-        if isSynthetic && arguments.contains("--reset-local-data") {
-            // Only the dedicated synthetic test namespace can be reset by a launch flag.
+        let namespace = switch catalogMode { case .synthetic: "SyntheticUITests"; case .candidates: "CandidateCatalog"; case .failClosed, .live: "Local" }
+        let folder = storageDirectory ?? support.appendingPathComponent("ThirdSpaces/\(namespace)", isDirectory: true)
+        if (catalogMode == .synthetic || catalogMode == .candidates) && arguments.contains("--reset-local-data") {
+            // Only the dedicated synthetic/candidate namespaces can be reset by a launch flag.
             do { if FileManager.default.fileExists(atPath: folder.path) { try FileManager.default.removeItem(at: folder) } }
-            catch { persistenceError = "Could not reset synthetic test storage." }
+            catch { persistenceError = "Could not reset local test storage." }
         }
-        self.repository = repository ?? (isSynthetic ? MockPlaceRepository(launchArguments: arguments, pageSize: 2, slowDelayNanoseconds: 15_000_000_000) : FailClosedPlaceRepository())
+        var candidateRegions: [Region] = []
+        var candidateRepository: (any PlaceRepository)?
+        if catalogMode == .candidates {
+            do {
+                let catalog = try OpenDataCandidateCatalog.load(from: Bundle(for: AppEnvironment.self))
+                candidateRegions = catalog.regions
+                candidateRepository = CandidatePlaceRepository(catalog: catalog)
+            } catch { persistenceError = "Could not load the bundled candidate catalog." }
+        }
+        regions = isSynthetic ? Region.syntheticUITestFixtures : candidateRegions
+        switch catalogMode {
+        case .synthetic:
+            let service = InMemoryCommunityService(url: folder.appendingPathComponent("community.json"), catalogPlaces: Place.syntheticUITestFixtures)
+            community = CommunityStore(service: service, isTestBackend: true)
+            self.repository = repository ?? MockPlaceRepository(launchArguments: arguments, pageSize: 2, slowDelayNanoseconds: 15_000_000_000,
+                                                                approvedSubmissions: { await service.approvedPlaces() })
+        case .live:
+            let client = SupabaseClient(config: supabaseConfig!)
+            community = CommunityStore(service: LiveCommunityService(client: client), isTestBackend: false)
+            self.repository = repository ?? SupabasePlaceRepository(client: client)
+        case .candidates, .failClosed:
+            community = nil
+            self.repository = repository ?? candidateRepository ?? FailClosedPlaceRepository()
+        }
         #if DEBUG
         // Only the isolated synthetic UI-test namespace; never ordinary local data.
         if isSynthetic && arguments.contains("--malformed-query") {
@@ -76,6 +110,29 @@ import SwiftUI
             guard restorationGeneration == requestedGeneration else { return }
             persistenceError = "Could not load local saves or drafts. Retry from Saved; your existing files are kept."
         }
+    }
+
+    /// Honesty label shown on browse surfaces whenever records are not approved catalog data.
+    var catalogNotice: String? {
+        switch catalogMode {
+        case .synthetic: "Synthetic demo · not verified places"
+        case .candidates: "Unreviewed open-data candidates · not verified"
+        case .failClosed, .live: nil
+        }
+    }
+
+    /// What a map count is counting, spoken and shown on area bubbles.
+    var recordNoun: String {
+        switch catalogMode {
+        case .synthetic: "synthetic place"
+        case .candidates: "candidate place"
+        case .failClosed, .live: "approved place"
+        }
+    }
+
+    /// Opening map frame: the catalog's own coverage when it is known, otherwise the world. Never the user's location.
+    var initialMapViewport: MapViewport? {
+        catalogMode == .candidates ? MapViewport(centerLatitude: 37.2, centerLongitude: -119.4, latitudeDelta: 10.5, longitudeDelta: 10.5) : nil
     }
 
     func isSaved(_ place: Place) -> Bool { savedIDs.contains(place.id) }

@@ -54,8 +54,9 @@ struct Place: Identifiable, Codable, Hashable, Sendable {
     let precision: LocationPrecision
     let facts: [PlaceFact]
     let media: [MediaAsset]
+    let provenance: PlaceProvenance?
 
-    init(id: UUID, approvedRevisionID: UUID, name: String, originalLanguage: String, category: PlaceCategory, regionID: String, location: GeoPoint?, precision: LocationPrecision, facts: [PlaceFact], media: [MediaAsset] = []) {
+    init(id: UUID, approvedRevisionID: UUID, name: String, originalLanguage: String, category: PlaceCategory, regionID: String, location: GeoPoint?, precision: LocationPrecision, facts: [PlaceFact], media: [MediaAsset] = [], provenance: PlaceProvenance? = nil) {
         self.id = id
         self.approvedRevisionID = approvedRevisionID
         self.name = name
@@ -67,8 +68,9 @@ struct Place: Identifiable, Codable, Hashable, Sendable {
         self.facts = facts
         // Public projections carry only rights-cleared media approved for this record.
         self.media = media.filter { $0.rightsCleared && $0.approvedParentID == id }
+        self.provenance = provenance
     }
-    private enum CodingKeys: String, CodingKey { case id, approvedRevisionID, name, originalLanguage, category, regionID, location, precision, facts, media }
+    private enum CodingKeys: String, CodingKey { case id, approvedRevisionID, name, originalLanguage, category, regionID, location, precision, facts, media, provenance }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         self.init(
@@ -82,7 +84,8 @@ struct Place: Identifiable, Codable, Hashable, Sendable {
             precision: try values.decode(LocationPrecision.self, forKey: .precision),
             facts: try values.decode([PlaceFact].self, forKey: .facts),
             // Snapshots cached before media existed decode with no images.
-            media: try values.decodeIfPresent([MediaAsset].self, forKey: .media) ?? []
+            media: try values.decodeIfPresent([MediaAsset].self, forKey: .media) ?? [],
+            provenance: try values.decodeIfPresent(PlaceProvenance.self, forKey: .provenance)
         )
     }
     static func == (lhs: Place, rhs: Place) -> Bool { lhs.id == rhs.id && lhs.approvedRevisionID == rhs.approvedRevisionID }

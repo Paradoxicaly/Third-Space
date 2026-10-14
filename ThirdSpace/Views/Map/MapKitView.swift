@@ -8,7 +8,7 @@ struct MapKitView: UIViewRepresentable {
     let content: MapViewModel.Content
     let selectedPlaceID: UUID?
     let initialViewport: MapViewport?
-    let isSynthetic: Bool
+    let recordNoun: String
     let onViewportChange: (MapViewport) -> Void
     let onSelectPlace: (UUID?) -> Void
 
@@ -104,11 +104,11 @@ struct MapKitView: UIViewRepresentable {
                 return view
             case let area as AreaAnnotation:
                 let view = mapView.dequeueReusableAnnotationView(withIdentifier: AreaCountView.reuseID, for: area) as? AreaCountView
-                view?.configure(area.cell, synthetic: parent.isSynthetic)
+                view?.configure(area.cell, noun: parent.recordNoun)
                 return view
             case let cluster as MKClusterAnnotation:
                 let view = mapView.dequeueReusableAnnotationView(withIdentifier: MKMapViewDefaultClusterAnnotationViewReuseIdentifier, for: cluster) as? ClusterCountView
-                view?.configure(count: cluster.memberAnnotations.count, synthetic: parent.isSynthetic)
+                view?.configure(count: cluster.memberAnnotations.count, noun: parent.recordNoun)
                 return view
             default:
                 return nil
@@ -272,12 +272,12 @@ class CountBubbleView: MKAnnotationView {
 }
 
 final class ClusterCountView: CountBubbleView {
-    func configure(count: Int, synthetic: Bool) {
+    func configure(count: Int, noun: String) {
         backgroundColor = PinColors.action
         label.textColor = PinColors.onAction
         layer.borderWidth = 0
         layoutBubble("\(count)")
-        accessibilityLabel = "\(count) \(synthetic ? "synthetic" : "approved") places here"
+        accessibilityLabel = "\(count) \(noun)\(count == 1 ? "" : "s") here"
         accessibilityHint = "Zooms in to show them"
         accessibilityIdentifier = "map-cluster"
     }
@@ -286,13 +286,12 @@ final class ClusterCountView: CountBubbleView {
 final class AreaCountView: CountBubbleView {
     static let reuseID = "area-count"
 
-    func configure(_ cell: AggregateCell, synthetic: Bool) {
+    func configure(_ cell: AggregateCell, noun: String) {
         backgroundColor = PinColors.surface
         label.textColor = PinColors.action
         layer.borderWidth = 2
         updateBorder()
         layoutBubble("\(cell.count)")
-        let noun = synthetic ? "synthetic place" : "approved place"
         accessibilityLabel = "\(cell.count) \(noun)\(cell.count == 1 ? "" : "s") in this area"
         accessibilityHint = "Zooms in to this area"
         accessibilityIdentifier = "map-cell-\(Int(cell.bounds.south)),\(Int(cell.bounds.west))"

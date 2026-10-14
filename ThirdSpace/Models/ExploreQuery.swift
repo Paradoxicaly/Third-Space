@@ -68,7 +68,11 @@ struct ExploreQuery: Codable, Hashable, Sendable {
         case .region(let id): if Self.normalize(place.regionID) != Self.normalize(id) { return false }
         case .bounds(let bounds): guard let point = place.location, bounds.contains(point) else { return false }
         }
-        if !text.isEmpty && !Self.normalize(place.name).contains(Self.normalize(text)) { return false }
+        if !text.isEmpty {
+            // Name or published address, so a city ("Oakland") finds places there.
+            let needle = Self.normalize(text)
+            guard Self.normalize(place.name).contains(needle) || (place.provenance?.address).map({ Self.normalize($0).contains(needle) }) == true else { return false }
+        }
         let supported: Set<ExploreIntent>
         switch place.category {
         case .all: supported = []
