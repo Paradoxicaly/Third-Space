@@ -1,5 +1,12 @@
 import Foundation
 
+extension Place {
+    /// Plain text for the share sheet: name, category and area only. Never coordinates, which may be sensitive.
+    func shareText(areaName: String) -> String {
+        "\(name)\n\(category.rawValue.capitalized) · \(areaName)\nShared from Third Spaces. Check hours before visiting."
+    }
+}
+
 // Presentation labels are separate from stable Codable wire values.
 extension FactValue {
     var displayName: String {

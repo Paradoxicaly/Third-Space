@@ -73,6 +73,14 @@ struct PlaceDetailView: View {
         .foregroundStyle(FieldGuide.Palette.primary)
         .background(FieldGuide.Palette.canvas.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ShareLink(item: place.shareText(areaName: place.provenance?.address ?? environment.areaName(for: place.regionID))) {
+                    Label("Share this place", systemImage: "square.and.arrow.up")
+                }
+                .accessibilityIdentifier("share-place")
+            }
+        }
     }
 
     /// Record-level provenance: required for imported places and shown before any archive content.

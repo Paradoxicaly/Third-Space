@@ -17,6 +17,8 @@ import SwiftUI
     /// Accounts, submissions, moderation and engagement; nil when no community backend is configured.
     let community: CommunityStore?
     let map: MapViewModel
+    /// Dated human picks; empty outside the synthetic test catalog until a curated backend exists.
+    let featured: any FeaturedRepository
     private let saved: any SavedRepository
     private var restorationGeneration: UInt64 = 0
     @Published private(set) var savedIDs: Set<UUID> = []
@@ -79,6 +81,7 @@ import SwiftUI
         saved = LocalSavedRepository(store: LocalSavedStore(url: folder.appendingPathComponent("saved.json")))
         explore = ExploreViewModel(repository: self.repository, cache: cache, queryURL: folder.appendingPathComponent("query.json"))
         map = MapViewModel(repository: self.repository, cache: cache)
+        featured = MockFeaturedRepository(launchArguments: catalogMode == .synthetic ? arguments : [])
     }
 
     func restoreLocalState() async {
@@ -134,6 +137,9 @@ import SwiftUI
     var initialMapViewport: MapViewport? {
         catalogMode == .candidates ? MapViewport(centerLatitude: 37.2, centerLongitude: -119.4, latitudeDelta: 10.5, longitudeDelta: 10.5) : nil
     }
+
+    /// Approved English area label when the region is known; otherwise the stable region ID.
+    func areaName(for regionID: String) -> String { regions.first { $0.id == regionID }?.names["en"] ?? regionID }
 
     func isSaved(_ place: Place) -> Bool { savedIDs.contains(place.id) }
     func toggleSaved(_ place: Place) async {

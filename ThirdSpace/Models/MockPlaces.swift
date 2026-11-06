@@ -38,6 +38,25 @@ extension Place {
     #endif
 }
 
+extension FeaturedItem {
+    /// Visibly fictional picks with fixed windows; the last one has already expired and must never show.
+    #if DEBUG
+    private static func synthetic(_ number: Int, place: Int, reason: String, from start: TimeInterval, until end: TimeInterval) -> FeaturedItem {
+        FeaturedItem(id: UUID(uuidString: String(format: "00000000-0000-0000-0002-%012d", number))!,
+                     targetID: UUID(uuidString: String(format: "00000000-0000-0000-0000-%012d", place))!,
+                     curator: "SYNTHETIC curator — test pick, not an editorial selection",
+                     reason: reason, startsAt: Date(timeIntervalSince1970: start), endsAt: Date(timeIntervalSince1970: end))
+    }
+    static let syntheticUITestFixtures: [FeaturedItem] = [
+        synthetic(1, place: 101, reason: "SYNTHETIC reason: long tables and a quiet weekday morning.", from: 1_767_225_600, until: 4_102_444_800),
+        synthetic(2, place: 104, reason: "SYNTHETIC reason: shaded seating for an unhurried afternoon.", from: 1_767_225_600, until: 4_102_444_800),
+        synthetic(3, place: 106, reason: "SYNTHETIC reason: expired pick that should never appear.", from: 1_700_000_000, until: 1_735_689_600)
+    ]
+    #else
+    static let syntheticUITestFixtures: [FeaturedItem] = []
+    #endif
+}
+
 extension Region {
     /// Synthetic labels and relationships only. These are not geographic coverage claims.
     #if DEBUG

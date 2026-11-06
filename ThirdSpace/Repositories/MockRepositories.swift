@@ -96,8 +96,20 @@ actor LocalSavedRepository: SavedRepository {
     func setSaved(_ target: SavedTarget, saved: Bool) async throws { try await store.setSaved(target, saved: saved) }
     func collections() async throws -> [SavedCollection] { [] }
 }
+/// Synthetic picks only under `--ui-testing`; every other launch has no featured content until a curated backend exists.
 actor MockFeaturedRepository: FeaturedRepository {
-    func activeItems(regionID: String?, at date: Date) async throws -> [FeaturedItem] { [] }
+    private let items: [FeaturedItem]
+    init(launchArguments: [String] = ProcessInfo.processInfo.arguments) {
+        #if DEBUG
+        items = launchArguments.contains("--ui-testing") && !launchArguments.contains("--empty") ? FeaturedItem.syntheticUITestFixtures : []
+        #else
+        items = []
+        #endif
+    }
+    func activeItems(regionID: String?, at date: Date) async throws -> [FeaturedItem] {
+        let regionPlaces = regionID.map { id in Set(Place.syntheticUITestFixtures.filter { $0.regionID == id }.map(\.id)) }
+        return items.filter { $0.isActive(at: date) && (regionPlaces?.contains($0.targetID) ?? true) }
+    }
 }
 actor MockProfileRepository: ProfileRepository {
     func publicProfile(id: UUID) async throws -> PublicProfile? { nil }

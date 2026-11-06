@@ -32,3 +32,6 @@ ThirdSpace/Resources/Supabase.plist
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Supabase CLI local state
+supabase/.temp/

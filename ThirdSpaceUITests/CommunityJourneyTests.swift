@@ -56,6 +56,21 @@ import XCTest
 
     private func back(_ app: XCUIApplication) { app.navigationBars.buttons.firstMatch.tap() }
 
+    /// Short, slow drags in whichever direction the element's live frame needs.
+    private func scrollToMiddle(_ element: XCUIElement, in app: XCUIApplication) {
+        let window = app.windows.firstMatch.frame
+        let top = window.minY + 160, bottom = window.maxY - 260
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        for _ in 0..<20 {
+            let frame = element.frame
+            if frame.minY >= top && frame.maxY <= bottom { return }
+            let dy: CGFloat = frame.minY > bottom ? -220 : 220
+            let start = origin.withOffset(CGVector(dx: window.midX, dy: window.midY))
+            start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: 0, dy: dy)))
+        }
+        XCTFail("Could not scroll \(element) into the middle of the screen; frame \(element.frame)")
+    }
+
     // Criteria 2 + 3
     func testSubmitPlaceModeratorApprovesAndSubmitterSeesDecision() {
         let app = launch(["--reset-local-data"])
@@ -126,9 +141,14 @@ import XCTest
         let rated = NSPredicate(format: "label CONTAINS %@", "3.5 · 2 ratings")
         expectation(for: rated, evaluatedWith: summary)
         waitForExpectations(timeout: 5)
+        // The multi-line review field reports not-hittable near the scroll edge, so scroll by
+        // its real frame until it sits mid-screen, then tap and wait for the keyboard.
         let review = any("review-text", in: app)
-        reveal(review, in: app)
-        review.tap(); review.typeText("SYNTHETIC test review: quiet tables")
+        XCTAssertTrue(review.waitForExistence(timeout: 5))
+        scrollToMiddle(review, in: app)
+        review.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "Review field did not take focus")
+        review.typeText("SYNTHETIC test review: quiet tables")
         any("post-review", in: app).tap()
         XCTAssertTrue(app.staticTexts["SYNTHETIC test review: quiet tables"].waitForExistence(timeout: 5))
 
