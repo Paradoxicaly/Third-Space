@@ -5,7 +5,7 @@ final class ShellAccessibilityTests: JourneyTestCase {
         let app = launch(["--reset-local-data"])
         XCTAssertGreaterThan(app.windows.firstMatch.frame.height, 600, "The app must not run in a legacy 320×480 compatibility canvas")
         // Map is a dedicated destination by product decision (2026-10-13); it shares Explore's filters.
-        for name in ["Explore", "Map", "Featured", "Saved", "Profile"] {
+        for name in ["Explore", "Map", "Community", "Saved", "Profile"] {
             select(name, in: app)
             XCTAssertTrue(app.buttons["Add or contribute"].exists, "Missing persistent action in \(name)")
         }

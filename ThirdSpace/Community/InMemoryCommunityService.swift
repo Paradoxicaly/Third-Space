@@ -54,7 +54,27 @@ actor InMemoryCommunityService: CommunityService {
                                           body: "SYNTHETIC review — invented test text, not a real visit.", createdAt: Date(timeIntervalSince1970: 1_700_000_000), hidden: false)]
             state.ratings = [StoredRating(placeID: first.id, userID: neighbor.id, stars: 3)]
         }
+        state.posts = seededThreads(places, neighbor: neighbor.id, moderator: moderator.id)
         return state
+    }
+
+    /// Approved, visibly synthetic threads so the forum is never empty in demos and tests.
+    private static func seededThreads(_ places: [Place], neighbor: UUID, moderator: UUID) -> [StoredPost] {
+        guard places.count > 1 else { return [] }
+        let asked = places[1].id, noted = places[min(2, places.count - 1)].id
+        func id(_ n: Int) -> UUID { UUID(uuidString: String(format: "00000000-0000-0000-0004-%012d", n))! }
+        func at(_ day: Double) -> Date { Date(timeIntervalSince1970: 1_700_000_000 + day * 86_400) }
+        return [
+            StoredPost(id: id(1), placeID: asked, parentID: nil, authorID: neighbor, kind: .question,
+                       title: "SYNTHETIC question: is it OK to stay a few hours?", body: "Invented test thread, not a real visit. Looking for somewhere to work after school.",
+                       createdAt: at(1), status: .approved, hidden: false),
+            StoredPost(id: id(2), placeID: asked, parentID: id(1), authorID: moderator, kind: .answer,
+                       title: nil, body: "SYNTHETIC answer — invented test text. Check the posted hours before you go.",
+                       createdAt: at(2), status: .approved, hidden: false),
+            StoredPost(id: id(3), placeID: noted, parentID: nil, authorID: neighbor, kind: .visitNote,
+                       title: nil, body: "SYNTHETIC visit note — invented test text. Tables by the window were free in the afternoon.",
+                       createdAt: at(3), status: .approved, hidden: false),
+        ]
     }
 
     private func persist() throws {
@@ -160,6 +180,32 @@ actor InMemoryCommunityService: CommunityService {
         return state.posts.filter { $0.status == .pending }.sorted { $0.createdAt < $1.createdAt }.compactMap(postValue)
     }
 
+    func recentThreads(kind: CommunityPostKind?, limit: Int) throws -> [PlacePost] {
+        let user = state.signedIn
+        let visible = state.posts.filter { post in
+            !post.hidden && (post.status == .approved || post.authorID == user) && isPublicPlace(post.placeID)
+        }
+        return visible
+            .filter { $0.parentID == nil && $0.kind != .answer && (kind == nil || $0.kind == kind) }
+            .sorted { $0.createdAt > $1.createdAt }
+            .prefix(max(0, limit))
+            .compactMap { thread($0, visible: visible) }
+    }
+
+    private func isPublicPlace(_ placeID: UUID) -> Bool {
+        catalogPlaceIDs.contains(placeID) || state.submissions.contains { $0.id == placeID && $0.status == .approved }
+    }
+
+    /// A thread root with its visible answers, oldest first.
+    private func thread(_ root: StoredPost, visible: [StoredPost]) -> PlacePost? {
+        guard let author = profileFor(root.authorID) else { return nil }
+        let replies = visible.filter { $0.parentID == root.id }.sorted { $0.createdAt < $1.createdAt }.compactMap { postValue($0) }
+        return PlacePost(id: root.id, placeID: root.placeID, kind: root.kind, title: root.title, body: root.body,
+                         author: author, createdAt: root.createdAt, status: root.status, replies: replies,
+                         helpfulCount: 0, markedHelpful: false)
+    }
+
+
     func moderatePost(id: UUID, decision: ModerationStatus, note: String?) throws {
         let user = try requireUser()
         guard state.moderatorIDs.contains(user) else { throw CommunityError.forbidden }
@@ -183,13 +229,7 @@ actor InMemoryCommunityService: CommunityService {
             $0.placeID == placeID && !$0.hidden && ($0.status == .approved || $0.authorID == user)
         }
         let roots = visiblePosts.filter { $0.parentID == nil }.sorted { $0.createdAt > $1.createdAt }
-        let posts = roots.compactMap { root -> PlacePost? in
-            guard let author = profileFor(root.authorID) else { return nil }
-            let replies = visiblePosts.filter { $0.parentID == root.id }.sorted { $0.createdAt < $1.createdAt }.compactMap { postValue($0) }
-            return PlacePost(id: root.id, placeID: root.placeID, kind: root.kind, title: root.title, body: root.body,
-                             author: author, createdAt: root.createdAt, status: root.status, replies: replies,
-                             helpfulCount: 0, markedHelpful: false)
-        }
+        let posts = roots.compactMap { thread($0, visible: visiblePosts) }
         return PlaceCommunityDetails(
             description: submission?.description ?? "",
             submitter: submission?.submittedBy.flatMap(profileFor),

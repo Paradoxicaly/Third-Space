@@ -174,6 +174,9 @@ protocol CommunityService: Sendable {
     func pendingSubmissions() async throws -> [SubmittedPlace]
     func moderate(placeID: UUID, decision: ModerationStatus, note: String?) async throws
     func pendingPosts() async throws -> [PlacePost]
+    /// Forum feed: newest thread roots across approved places (approved and visible, plus the signed-in
+    /// member's own pending ones), each with its visible answers. Never includes answers as roots.
+    func recentThreads(kind: CommunityPostKind?, limit: Int) async throws -> [PlacePost]
     func moderatePost(id: UUID, decision: ModerationStatus, note: String?) async throws
 
     func details(placeID: UUID) async throws -> PlaceCommunityDetails

@@ -4,7 +4,8 @@ import XCTest
 @MainActor final class BrowseImprovementJourneyTests: JourneyTestCase {
     func testFeaturedPicksSaveSortAndShare() {
         let app = launch(["--reset-local-data"])
-        select("Featured", in: app)
+        select("Community", in: app)
+        app.buttons["Featured picks"].tap()
         let pick = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "featured-")).firstMatch
         XCTAssertTrue(pick.waitForExistence(timeout: 10), "Active synthetic picks should show")
         XCTAssertFalse(app.staticTexts["SYNTHETIC reason: expired pick that should never appear."].exists, "Expired pick leaked")

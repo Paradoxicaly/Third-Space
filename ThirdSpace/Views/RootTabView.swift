@@ -1,13 +1,13 @@
 import SwiftUI
 
 enum MainSection: String, CaseIterable, Identifiable {
-    case explore = "Explore", map = "Map", featured = "Featured", saved = "Saved", profile = "Profile"
+    case explore = "Explore", map = "Map", community = "Community", saved = "Saved", profile = "Profile"
     var id: Self { self }
     var symbol: String {
         switch self {
         case .explore: "safari"
         case .map: "map"
-        case .featured: "square.stack"
+        case .community: "bubble.left.and.bubble.right"
         case .saved: "bookmark"
         case .profile: "person.crop.circle"
         }
@@ -60,7 +60,7 @@ struct RootTabView: View {
             switch section {
             case .explore: ExploreView()
             case .map: PlacesMapView()
-            case .featured: FeaturedView()
+            case .community: CommunityFeedView()
             case .saved: SavedPlacesView()
             case .profile: ProfileView()
             }

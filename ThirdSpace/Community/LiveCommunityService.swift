@@ -118,6 +118,35 @@ struct LiveCommunityService: CommunityService {
         }
     }
 
+    /// Filters on status and hidden explicitly: the select policy also shows moderators pending and hidden
+    /// posts, which must never reach the public feed. Approved posts additionally require an approved place (RLS).
+    func recentThreads(kind: CommunityPostKind?, limit: Int) async throws -> [PlacePost] {
+        let user = await currentUserID()
+        let columns = "id,place_id,parent_id,kind,title,body,status,hidden,created_at,author:profiles!place_posts_author_id_fkey(id,username)"
+        let visibility = user.map { "(and(status.eq.approved,hidden.is.false),and(author_id.eq.\($0.uuidString),hidden.is.false))" }
+            ?? "(and(status.eq.approved,hidden.is.false))"
+        var query = [URLQueryItem(name: "select", value: columns), URLQueryItem(name: "parent_id", value: "is.null"),
+                     URLQueryItem(name: "kind", value: "neq.answer"), URLQueryItem(name: "or", value: visibility),
+                     URLQueryItem(name: "order", value: "created_at.desc"), URLQueryItem(name: "limit", value: String(min(max(limit, 0), 100)))]
+        if let kind { query.append(eq("kind", kind.rawValue)) }
+        let roots = try await client.select("place_posts", query: query, as: PostRow.self).rows
+        guard !roots.isEmpty else { return [] }
+        let answers = try await client.select("place_posts", query: [
+            URLQueryItem(name: "select", value: columns),
+            URLQueryItem(name: "parent_id", value: "in.(\(roots.map(\.id.uuidString).joined(separator: ",")))"),
+            URLQueryItem(name: "or", value: visibility), URLQueryItem(name: "order", value: "created_at.asc"), URLQueryItem(name: "limit", value: "500")
+        ], as: PostRow.self).rows
+        func value(_ row: PostRow, replies: [PlacePost]) -> PlacePost? {
+            guard let author = row.author, let kind = CommunityPostKind(rawValue: row.kind) else { return nil }
+            return PlacePost(id: row.id, placeID: row.place_id, kind: kind, title: row.title, body: row.body,
+                             author: CommunityProfile(id: author.id, username: author.username), createdAt: row.created_at,
+                             status: ModerationStatus(rawValue: row.status) ?? .pending, replies: replies, helpfulCount: 0, markedHelpful: false)
+        }
+        return roots.compactMap { root in
+            value(root, replies: answers.filter { $0.parent_id == root.id }.compactMap { value($0, replies: []) })
+        }
+    }
+
     func moderatePost(id: UUID, decision: ModerationStatus, note: String?) async throws {
         _ = try await requireUser()
         guard decision != .pending else { throw CommunityError.invalidInput("Choose approve or reject.") }
